@@ -35,7 +35,7 @@ This will run the chain, printing progress along the way:
   - acceptance fraction. It should be around ~0.2-0.3
   - The last number is the adjustable `a` parameter in the GW algorithm (see the [algorithm paper](https://arxiv.org/abs/1202.3665) for details). It can be adjusted to drive the acceptance fraction towards a desired value. If the acceptance fraction is too small, `a` can be reduced (using `chain temperature 1.5` for example) to increase the acceptance fraction.
 
-```
+```tcl
 * Initializing: Using the 0.5* Covariance **
 
 ** Done initializaing **
