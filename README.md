@@ -10,7 +10,7 @@ xspec has its own implementation of the GW algorithm, but I find it somewhat dif
 
 ## INSTALL:
 Choose the files relevant to your HEAsoft version. Here I will work with v6.26.
-- Download all updated 5 files: `Chain.cxx, Chain.h, ChainManager.cxx, ChainManager.h, xsChain.cxx`
+- Download all updated 5 files from the relevant folder. the `orig` and `new` refer to the original files from xspec (provided in case you want to restore the files) and the new updated files that need to be used: `Chain.cxx, Chain.h, ChainManager.cxx, ChainManager.h, xsChain.cxx`
 - Place them in the right place inside the xspec source structure and recompile the relevant code:
   - `Chain.cxx, Chain.h, ChainManager.cxx, ChainManager.h` inside: `heasoft-6.26/Xspec/src/XSFit/MCMC`
   - then inside `heasoft-6.26/Xspec/src/XSFit`, run: `hmake` and `hmake install`. Ensure that HEAsoft is initialized in the standard way. See their documentaton.
