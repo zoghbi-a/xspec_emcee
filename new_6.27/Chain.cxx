@@ -912,7 +912,7 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
 
     for (size_t i=0; i<m_walkers; i++) {
       walkerStatisticValue[i] = results[i].dValues[0][0];
-      if (!m_burnLength) m_IO->writePoint();
+      if (!m_burnLength) m_IO->writePoint(walkerParamValues[i], walkerStatisticValue[i]);
     }
   }
   catch(YellowAlert&)
