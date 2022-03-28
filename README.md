@@ -9,11 +9,10 @@
 xspec has its own implementation of the GW algorithm, but I find it somewhat difficult to use, so I created my own implementation, which gives more control on the chains.
 
 ## INSTALL:
-Choose the files relevant to your HEAsoft version. Here I will work with v6.30.
-- Download all updated 5 files from the relevant folder. the `orig` and `new` refer to the original files from xspec (provided in case you want to restore the files) and the new updated files that need to be used: `Chain.cxx, Chain.h, ChainManager.cxx, ChainManager.h, xsChain.cxx`
+Choose the files relevant to your HEAsoft version by selecting the appropriate branch (master is the latest). Here I will work with v6.29.
+- Download all updated 5 files: `Chain.cxx, Chain.h, ChainManager.cxx, ChainManager.h, xsChain.cxx`
 - Place them in the right place inside the xspec source structure and recompile the relevant code:
-  - `Chain.cxx, Chain.h, ChainManager.cxx, ChainManager.h` inside: `heasoft-6.30/Xspec/src/XSFit/MCMC`
-  - then inside `heasoft-6.30/Xspec/src/XSFit`, run: `hmake` and `hmake install`. Ensure that HEAsoft is initialized in the standard way. See their documentaton.
+  - `Chain.cxx, Chain.h, ChainManager.cxx, ChainManager.h` inside: `heasoft-6.29/Xspec/src/XSFit/MCMC`, and then inside `heasoft-6.29/Xspec/src/XSFit`, run: `hmake` and `hmake install`. Ensure that HEAsoft is initialized in the standard way before doing this. See their documentaton.
   - `xsChain.cxx` inside: `heasoft-6.30/Xspec/src/XSUser/Handler`, then inside `heasoft-6.30/Xspec/src/XSUser`, run: `hmake` and `hmake install`
 - Run the GW chain in the usual way.
 
