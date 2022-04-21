@@ -856,9 +856,9 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
     */
 
     //az+
-    if (i==0) {
-        walkerParamValues[0] = originalParamValues;
-    } else if ( useCovar ) {
+    //if (i==0) {
+    //    walkerParamValues[0] = originalParamValues;
+    if ( useCovar ) {
         // for this walker set variable parameters to original values
         fit->setVariableParameterValues(originalParamValues);
         fit->randomizeModelParameters(false, 0.5);
