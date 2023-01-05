@@ -642,8 +642,7 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
 
 	     if ( log(randNumber[irand++]) < lndiff ) {
                 RealArray& currentParamValues = walkerParamValues[iwalk];
-                const TransferStruct& currentStruct = parallelInput[iResults];
-                const vector<double>& newValVector = currentStruct.dValues[0];
+		const vector<double>& newValVector = output.dValues[1];
                 for (size_t iVal=0; iVal<newValVector.size(); ++iVal)
                    currentParamValues[iVal] = newValVector[iVal];                               
 	        currentStatisticValue = newStatisticValue;

@@ -329,7 +329,7 @@ int XSGlobal::doChain(const StringArray & rawArgs)
 
 	    const std::set<string>& nativeNames = fit->nativeRandomizerNames();
 	    isNative = nativeNames.find(propName) != nativeNames.end();
-	    if (isNative) {
+	    if (isNative && propName != "uniform") {
 	      // Currently existing built-in classes make no use of optional
 	      // strings except for the case where the 4th arg is to be 
 	      // interpreted as a filename.
@@ -365,7 +365,7 @@ int XSGlobal::doChain(const StringArray & rawArgs)
 		// Randomizer template classes.
 		propName += " <filename>";
 	      }
-	    } else { // end if native
+	    } else { // end if native or the uniform option which takes no further arguments
 	      // For user add-on classes, the name can only be
 	      // specified with the 3 arg (hence it must be 
 	      // 1 word, no spaces).
