@@ -371,7 +371,7 @@ void Chain::runMH (const size_t appendLength, const Real temperature)
 //az- void Chain::runGW (const size_t appendLength)
 //az+
 void Chain::runGW (const size_t appendLength, const Real temperature)
-//az+//
+//az+/
 {
   using namespace std;
   
@@ -493,9 +493,9 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
   // and it won't allow ctrl-C breaking from the loop.      
   const SIGINT_Handler *intHandler = dynamic_cast<const SIGINT_Handler*>
                 (SignalHandler::instance()->getHandler(SIGINT));
-  //az- ProcessManager procs(new ParallelStats(), "walkers");
+  //az- ProcessManager<DefaultTransferClass,DefaultTransferClass> procs(new ParallelStats(), "walkers");
   //az+
-  ProcessManager procs(new ParallelGW(), "walkers");
+  ProcessManager<DefaultTransferClass,DefaultTransferClass> procs(new ParallelGW(), "walkers");
   //az+/
   
   try
@@ -513,7 +513,7 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
      // Set of walkers will be split in two for parallelization.
      const size_t nParallel = m_walkers/2;
      procs.createProcesses((int)nParallel);
-
+      
      //az+
      size_t naccept(0);
      size_t ntrial(0);
@@ -538,7 +538,7 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
           const size_t upperWalker = (iset+1)*nParallel; 
           // These two vectors will be sized to the number
           //   of walker sets which produce 'good' newParamVals.
-          vector<TransferStruct> parallelInput;
+          vector<DefaultTransferClass> parallelInput;
           //az- vector<size_t> iNewWalk;        
 	  for (size_t iwalk=lowerWalker; iwalk<upperWalker; iwalk++) 
           {
@@ -580,8 +580,8 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
               
               if (good)
               {
-                 parallelInput.push_back(TransferStruct());
-                 TransferStruct& currentStruct = parallelInput.back();
+                 parallelInput.push_back(DefaultTransferClass());
+                 DefaultTransferClass& currentStruct = parallelInput.back();
                  currentStruct.dValues.resize(1);
                  vector<double>& valVector = currentStruct.dValues[0];
                  valVector.resize(newParamValues.size());
@@ -590,8 +590,8 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
                  iNewWalk.push_back(iwalk);
               }
           */
-            //az+
-            TransferStruct parInfo;
+          //az+
+            DefaultTransferClass parInfo;
             parInfo.iValues.push_back(vector<int>());
             parInfo.iValues[0].push_back(iwalk);
             parInfo.iValues[0].push_back(nPars);
@@ -615,15 +615,15 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
               
           } // end loop over walkers in this set
             
-          ProcessManager::ParallelResults results;
-          procs.run(parallelInput, results);  
+          ProcessManager<DefaultTransferClass,DefaultTransferClass>::ParallelResults results;
+          procs.run(parallelInput, results);
           /*az-
-          ProcessManager::ParallelResults::const_iterator itResults = results.begin();
+          ProcessManager<DefaultTransferClass,DefaultTransferClass>::ParallelResults::const_iterator itResults = results.begin();
           size_t iResults=0;
           while (itResults != results.end())
           {
              const size_t iwalk = iNewWalk[iResults];
-             const TransferStruct& output = itResults->second;
+             const DefaultTransferClass& output = itResults->second;
              if (output.status < 0)
              {
                 string errMsg("Error occurred while calculating statistic from random walkers.");
@@ -642,17 +642,17 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
 
 	     if ( log(randNumber[irand++]) < lndiff ) {
                 RealArray& currentParamValues = walkerParamValues[iwalk];
-		const vector<double>& newValVector = output.dValues[1];
+                const vector<double>& newValVector = output.dValues[1];
                 for (size_t iVal=0; iVal<newValVector.size(); ++iVal)
-                   currentParamValues[iVal] = newValVector[iVal];                               
+		  currentParamValues[iVal] = newValVector[iVal];
 	        currentStatisticValue = newStatisticValue;
-	     } 
+	     }
 
              ++iResults;
              ++itResults;
           }  // end results struct loop
-          */
-          //az+
+         */
+         //az+
           for (size_t iwalk=0; iwalk<m_walkers/2; iwalk++) {
               int igood = results[iwalk].iValues[0][0];
               size_t jwalk = iwalk + iset*m_walkers/2;
@@ -683,6 +683,7 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
 	    m_IO->writePoint(walkerParamValues[iwalk], walkerStatisticValue[iwalk]);
 	  }
 	}
+    
     //az+
     // print progress
     if (istep%10 == 0) {
@@ -744,9 +745,10 @@ void Chain::runGW (const size_t appendLength, const Real temperature)
   fit->isStillValid(wasFitStillValid);
 }
 
+
 //az+
-void Chain::ParallelGW::execute(const bool isParallel, const TransferStruct& input,
-              TransferStruct& output)
+void Chain::ParallelGW::execute(const bool isParallel, const DefaultTransferClass& input,
+              DefaultTransferClass& output)
 {
   const int iwalk = input.iValues[0][0];
   const int nPars = input.iValues[0][1];
@@ -803,7 +805,6 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
 			      std::vector<RealArray>& walkerParamValues,
 			      std::vector<Real>& walkerStatisticValue)
 {
-
   /*az-
   try {
     // initialize the parameter randomization
@@ -839,10 +840,10 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
   RealArray paramDeltas = fit->variableParameterValues('d');
   RealArray paramMax = fit->variableParameterValues('t');
   RealArray paramMin = fit->variableParameterValues('b');
-  std::vector<TransferStruct> parallelInput;
+  std::vector<DefaultTransferClass> parallelInput;
   size_t nPars = originalParamValues.size();
   //az+//
-
+  
   // loop round walkers
   for (size_t i=0; i<m_walkers; i++) {
 
@@ -853,7 +854,6 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
     fit->randomizeForChain();
     walkerParamValues[i] = fit->variableParameterValues();
     */
-
     //az+
     //if (i==0) {
     //    walkerParamValues[0] = originalParamValues;
@@ -876,7 +876,6 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
     // if required save the results to the output file
     if (!m_burnLength) m_IO->writePoint();
     */
-    
     //az+
     for (size_t j=0; j<nPars; j++){
         if (walkerParamValues[i][j]<paramMin[j])
@@ -884,7 +883,7 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
         if (walkerParamValues[i][j]>paramMax[j])
                 walkerParamValues[i][j] = paramMax[j];
     }
-    TransferStruct parInfo;
+    DefaultTransferClass parInfo;
     parInfo.dValues.push_back(std::vector<Real>());
     for(size_t j=0; j<nPars; j++) {
         parInfo.dValues[0].push_back(walkerParamValues[i][j]);
@@ -895,11 +894,11 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
 
   //az+
   size_t nGWProcs = m_walkers;
-  ProcessManager procs(new ParallelGWInit(), "walkers");
+  ProcessManager<DefaultTransferClass,DefaultTransferClass> procs(new ParallelGWInit(), "walkers");
   try
   {
     procs.createProcesses(nGWProcs);
-    ProcessManager::ParallelResults results;
+    ProcessManager<DefaultTransferClass,DefaultTransferClass>::ParallelResults results;
     procs.run(parallelInput, results);
 
     for (size_t i=0; i<m_walkers; i++) {
@@ -916,11 +915,12 @@ void Chain::initializeWalkers(const RealArray& originalParamValues,
   procs.killProcesses();
   tcout << "\n** Done initializaing **" << std::endl;
   //az+//
+
 }
 
 //az+
 void Chain::ParallelGWInit::execute(const bool isParallel,
-            const TransferStruct& input, TransferStruct& output)
+            const DefaultTransferClass& input, DefaultTransferClass& output)
 {
   std::valarray<Real> currentParamValues(input.dValues[0].data(), input.dValues[0].size());
   fit->setVariableParameterValues(currentParamValues);
@@ -929,7 +929,6 @@ void Chain::ParallelGWInit::execute(const bool isParallel,
   output.dValues.push_back(std::vector<Real>(1, fit->statistic()));
 }
 //az+//
-
 
 void Chain::cleanupRun (const RealArray& origPars)
 {

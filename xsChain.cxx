@@ -329,14 +329,24 @@ int XSGlobal::doChain(const StringArray & rawArgs)
 
 	    const std::set<string>& nativeNames = fit->nativeRandomizerNames();
 	    isNative = nativeNames.find(propName) != nativeNames.end();
-	    if (isNative && propName != "uniform") {
-	      // Currently existing built-in classes make no use of optional
-	      // strings except for the case where the 4th arg is to be 
-	      // interpreted as a filename.
-	      if (nArgs == 3) {
-		tcerr << "***Error: To use " << propName << " proposal, must also specify "
-		      << "\nfit | chain | diagonal | matrix | deltas | <filename>" << std::endl;
-		return -1;
+	    if (isNative) {
+	      // Special case for backwards compatibility assumes that proposal uniform
+	      // should be treated as proposal uniform limits
+	      if (nArgs == 3 && propName == "uniform") {
+		fourthArg = "limits";
+	      } else if (nArgs == 3 || (nArgs == 4 && rawArgs[3] == "?")) {
+		// Currently existing built-in classes make no use of optional
+		// strings except for the case where the 4th arg is to be 
+		// interpreted as a filename.
+		if ( propName == "uniform" ) {
+		  tcerr << "***Error: To use " << propName << " proposal, must also specify "
+			<< "\ndeltas | limits" << std::endl;
+		  return -1;
+		} else {
+		  tcerr << "***Error: To use " << propName << " proposal, must also specify "
+			<< "\nfit | chain | diagonal | matrix | deltas | <filename>" << std::endl;
+		  return -1;
+		}
 	      }
 	      const string sourceQualifier(XSutility::lowerCase(fourthArg));
 
@@ -357,6 +367,10 @@ int XSGlobal::doChain(const StringArray & rawArgs)
 		propName += " deltas";
 		initString = " ";
 		optionalArgsStart = 4;
+	      } else if (string("limits").find(sourceQualifier) == 0) {
+		propName += " limits";
+		initString = " ";
+		optionalArgsStart = 4;
 	      } else {
 		// Assume fourthArg is a filename, to be passed in initString.
 		optionalArgsStart = 3;
@@ -365,7 +379,7 @@ int XSGlobal::doChain(const StringArray & rawArgs)
 		// Randomizer template classes.
 		propName += " <filename>";
 	      }
-	    } else { // end if native or the uniform option which takes no further arguments
+	    } else { // end if native option which takes no further arguments
 	      // For user add-on classes, the name can only be
 	      // specified with the 3 arg (hence it must be 
 	      // 1 word, no spaces).
@@ -381,8 +395,8 @@ int XSGlobal::doChain(const StringArray & rawArgs)
 	  if (isNative && propName.find(" chain") != string::npos) chainManager->recalc();
                      
 	  if (chainType == "gw") {
-	    tcout << "    Note that the currently selected chain type is Goodman-Weare so the the 'chain proposal'"
-		  <<" setting is only used to generate the initial walkers." << std::endl;
+	    tcout << "   Note that the currently selected chain type is Goodman-Weare so the \n"
+		  << "   'chain proposal' setting is only used to generate the initial walkers." << std::endl;
 	  }
 	} // end if nArgs >= 3
 	break;
@@ -528,9 +542,7 @@ int XSGlobal::doChain(const StringArray & rawArgs)
 		chainManager->appendToChain(fileName, length, temperature, fileType);
 	      } else if ( chainType == "gw" ) {
 		//az- chainManager->appendToChain(fileName, length, walkers, fileType);
-        //az+
         chainManager->appendToChain(fileName, length, walkers, temperature, fileType);
-        //az+//
 	      }
 	    } catch (...) {
 	      sigContainer->registerHandler(SIGINT,oldHandler);

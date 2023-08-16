@@ -111,12 +111,16 @@ void ChainManager::addChain (Chain* chain)
   // don't bother prompting if new one may be different.
   if (!m_chains.empty() && m_allLengthsSame && chain->length() != m_length)
   {
-     string prompt(" This chain has a different length than all other loaded Chains.");
-     prompt += "\n Do you still want to load it? (y/n): ";
-     string result;
-     XSparse::basicPrompt(prompt, result);
-     if (result.empty() || (result[0] != 'y'&&
-        result[0] != 'Y'))  throw YellowAlert();     
+     // Don't prompt if only one chain exists, and it's about to be replaced.
+     if (m_chains.size() != 1 || m_chains.find(newFile) == m_chains.end())
+     {
+        string prompt(" This chain has a different length than all other loaded Chains.");
+        prompt += "\n Do you still want to load it? (y/n): ";
+        string result;
+        XSparse::basicPrompt(prompt, result);
+        if (result.empty() || (result[0] != 'y'&&
+           result[0] != 'Y'))  throw YellowAlert();
+     }     
   }
   removeChain(newFile);
   m_chains[newFile] = chain;
@@ -845,7 +849,7 @@ void ChainManager::appendToChain (const string& chainName, const size_t addLengt
 //az- void ChainManager::appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const string& format)
 //az+
 void ChainManager::appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const Real temperature, const string& format)
-//az+//
+//az+/
 {
    ChainContainer::iterator itChain = m_chains.find(chainName);
    if (itChain == m_chains.end())
@@ -873,7 +877,7 @@ void ChainManager::appendToChain (const string& chainName, const size_t addLengt
      //az- chain->runGW(addLength);
      //az+
      chain->runGW(addLength, temperature);
-     //az+//
+     //az+/
    }
    catch (YellowAlert&)
    {

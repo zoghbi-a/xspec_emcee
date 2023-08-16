@@ -66,10 +66,10 @@ class ChainManager
       bool checkCovarForSynch () const;
       std::pair<Real,Real> getParErrorRange (const Real confidence, const size_t parNum, const string& modName) const;
       void appendToChain (const string& chainName, const size_t addLength, const Real temperature, const string& format);
+      //az- void appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const string& format);
       //az+
       void appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const Real temperature, const string& format);
-      //az+//
-      //az- void appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const string& format);
+      //az+/
       size_t length () const;
       size_t width () const;
       bool allLengthsSame () const;

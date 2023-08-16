@@ -93,7 +93,7 @@ class Chain
       void readPoint (std::vector<Real>& chainVals) const;
       void calcStats (size_t iPar, Real& mean, Real& variance, size_t& nRepeats,
 		      std::vector<std::pair<Real,Real> >& subIntervals,
-              RealArray& subMeans, RealArray& subVariances);
+		      RealArray& subMeans, RealArray& subVariances);
       void calcMeanVarValues (RealArray& meanParVals, RealArray& varParVals, 
 			      Real& meanStatVal, Real& varStatVal);
       void findClosestPoint (RealArray& inputParVals, RealArray& parVals, Real& statVal);
@@ -145,20 +145,20 @@ class Chain
       static bool checkForRepeat (const std::vector<Real>& prevPoint, const std::vector<Real>& point);
 
     // Additional Private Declarations
-      //az+
-      class ParallelGW : public ParallelFunc
+    //az+
+      class ParallelGW : public ParallelFunc<DefaultTransferClass,DefaultTransferClass>
         {
           public:
             virtual void execute(const bool isParallel, 
-                const TransferStruct& input, TransferStruct& output);
+                const DefaultTransferClass& input, DefaultTransferClass& output);
         };
-      class ParallelGWInit : public ParallelFunc
+      class ParallelGWInit : public ParallelFunc<DefaultTransferClass,DefaultTransferClass>
         {
           public:
             virtual void execute(const bool isParallel, 
-                const TransferStruct& input, TransferStruct& output);
+                const DefaultTransferClass& input, DefaultTransferClass& output);
         };
-      //az+//
+    //az+/
 
   private: //## implementation
     // Data Members for Class Attributes
