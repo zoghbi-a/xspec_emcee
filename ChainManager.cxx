@@ -437,7 +437,6 @@ void ChainManager::calcDevInfCrit (Real& effNumPars, Real& devInfCrit)
   // for each chain
   ChainContainer::const_iterator itChains = m_chains.begin();
   ChainContainer::const_iterator itEnd = m_chains.end();
-  size_t iCh = 0;
   while (itChains != itEnd) {
     Chain* chain = itChains->second;
     totalLength += chain->length();
@@ -451,7 +450,6 @@ void ChainManager::calcDevInfCrit (Real& effNumPars, Real& devInfCrit)
     varStat += chainVarStat*(chain->length()-1);
     meanParamValues += chainMeanParamValues*static_cast<Real>(chain->length());
     varParamValues += chainVarParamValues*static_cast<Real>((chain->length()-1));
-    ++iCh;
     ++itChains;
   }
   meanParamValues /= totalLength;
