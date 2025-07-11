@@ -27,7 +27,6 @@ jobs:
     steps:
 
       - name: Checkout repository
-        if: steps.check_skip.outputs.do_build == 'true'
         uses: actions/checkout@v4
 
       - name: prepare mamba
@@ -37,21 +36,37 @@ jobs:
           create-args: >-
             python=3.12
             rattler-build
+            yq
       
       - name: get heasoft-conda
         run: |
+          get_path() {
+            local fname=$1
+            if [ "$fname" == "xsChain.cxx" ]; then
+              echo "Xspec/src/XSUser/Handler"
+            else
+              echo "Xspec/src/XSFit/MCMC"
+            fi
+          }
+          
           git clone https://github.com/heasarc/heasoft-conda.git
           cd heasoft-conda
           git checkout ${{ inputs.heasoft_conda_branch }}
           cd xspec
+          # update version by adding .az to it
+          yq '.context.version += ".az"' -i recipe.yaml
           for file in `find ../.. -maxdepth 1  -name '*.patch'`; do
             fname=$(echo $file | sed 's|\.patch$||' | sed 's|../../||')
             path=$(get_path $fname)
+            echo "Processing $fname with path $path"
             # set the correct path
             echo "--- $path/$fname" > $fname.patch
             echo "+++ $path/$fname" >> $fname.patch
             tail -n +3 $file >> $fname.patch
+            echo "Adding $fname.patch to recipe.yaml"
+            yq '.source.patches += ["'$fname'.patch"]' -i recipe.yaml
           done
+          cat recipe.yaml
           cd ..
 
       - name: build packages
@@ -73,5 +88,5 @@ jobs:
       - name: Upload conda package
         uses: actions/upload-artifact@v4
         with:
-          name: conda-package-${{ inputs.package }}-${{ matrix.platform }}
-          path: output/
+          name: conda-package-$xspec-${{ matrix.platform }}
+          path: heasoft-conda/output/
