@@ -1,0 +1,35 @@
+--- Chain.h
++++ Chain.h
+@@ -74,7 +74,10 @@
+       const string& getFileName () const;
+       void run (const size_t appendLength, const Real temperature);
+       void runMH (const size_t appendLength, const Real temperature);
+-      void runGW (const size_t appendLength);
++      //az- void runGW (const size_t appendLength);
++      //az+
++      void runGW (const size_t appendLength, const Real temperature);
++      //az+//
+       void initializeWalkers(const RealArray& originalParamValues,
+ 			     std::vector<RealArray>& walkerParamValues,
+ 			     std::vector<Real>& walkerStatisticValue);
+@@ -142,6 +145,20 @@
+       static bool checkForRepeat (const std::vector<Real>& prevPoint, const std::vector<Real>& point);
+ 
+     // Additional Private Declarations
++    //az+
++      class ParallelGW : public ParallelFunc<DefaultTransferClass,DefaultTransferClass>
++        {
++          public:
++            virtual void execute(const bool isParallel, 
++                const DefaultTransferClass& input, DefaultTransferClass& output);
++        };
++      class ParallelGWInit : public ParallelFunc<DefaultTransferClass,DefaultTransferClass>
++        {
++          public:
++            virtual void execute(const bool isParallel, 
++                const DefaultTransferClass& input, DefaultTransferClass& output);
++        };
++    //az+/
+ 
+   private: //## implementation
+     // Data Members for Class Attributes

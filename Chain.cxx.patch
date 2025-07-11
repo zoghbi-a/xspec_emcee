@@ -1,0 +1,353 @@
+--- Chain.cxx
++++ Chain.cxx
+@@ -112,7 +112,10 @@
+   if ( m_chainType == "MetropolisHastings" ) {
+     runMH(appendLength, temperature);
+   } else if ( m_chainType == "GoodmanWeare" ) {
+-    runGW(appendLength);
++    //az- runGW(appendLength);
++    //az+
++    runGW(appendLength, temperature);
++    //az+/
+   } else {
+     string msg("Chain type is neither Metropolis-Hastings or Goodman-Weare");
+     throw ChainError(msg);
+@@ -365,7 +368,10 @@
+   fit->isStillValid(wasFitStillValid);
+ }
+ 
+-void Chain::runGW (const size_t appendLength)
++//az- void Chain::runGW (const size_t appendLength)
++//az+
++void Chain::runGW (const size_t appendLength, const Real temperature)
++//az+/
+ {
+   using namespace std;
+   
+@@ -487,7 +493,10 @@
+   // and it won't allow ctrl-C breaking from the loop.      
+   const SIGINT_Handler *intHandler = dynamic_cast<const SIGINT_Handler*>
+                 (SignalHandler::instance()->getHandler(SIGINT));
+-  ProcessManager<DefaultTransferClass,DefaultTransferClass> procs(new ParallelStats(), "walkers");
++  //az- ProcessManager<DefaultTransferClass,DefaultTransferClass> procs(new ParallelStats(), "walkers");
++  //az+
++  ProcessManager<DefaultTransferClass,DefaultTransferClass> procs(new ParallelGW(), "walkers");
++  //az+/
+   
+   try
+   {
+@@ -504,6 +513,14 @@
+      // Set of walkers will be split in two for parallelization.
+      const size_t nParallel = m_walkers/2;
+      procs.createProcesses((int)nParallel);
++      
++     //az+
++     size_t naccept(0);
++     size_t ntrial(0);
++     Real bestStat(1e10);
++     Real A(2.0);
++     if (temperature > 1.0) {A = temperature;}
++     //az+//
+      
+      // start the main loop over the chain steps
+ 
+@@ -516,16 +533,16 @@
+ 
+ 	for (size_t iset=0; iset<2; iset++) {
+ 	  // loop over the walkers in this set
+-          vector<Real> Zsaved(nParallel);
++          //az- vector<Real> Zsaved(nParallel);
+           const size_t lowerWalker = iset*nParallel;
+           const size_t upperWalker = (iset+1)*nParallel; 
+           // These two vectors will be sized to the number
+           //   of walker sets which produce 'good' newParamVals.
+           vector<DefaultTransferClass> parallelInput;
+-          vector<size_t> iNewWalk;        
++          //az- vector<size_t> iNewWalk;        
+ 	  for (size_t iwalk=lowerWalker; iwalk<upperWalker; iwalk++) 
+           {
+-	      RealArray& currentParamValues = walkerParamValues[iwalk];
++	      //az- RealArray& currentParamValues = walkerParamValues[iwalk];
+ 
+ 	      // draw a random walker from one of the complementary set
+ 
+@@ -533,6 +550,7 @@
+ 	      jwalk = (size_t)(randNumber[irand++]*(m_walkers/2));
+ 	      if ( iset == 0 ) jwalk += m_walkers/2;
+ 
++          /*az-
+ 	      RealArray& complementaryParamValues = walkerParamValues[jwalk];
+ 
+ 	      // Use A as 2.0 as recommended by Goodman & Weare although we may want to 
+@@ -571,11 +589,35 @@
+                     valVector[iVal] = newParamValues[iVal];
+                  iNewWalk.push_back(iwalk);
+               }
++          */
++          //az+
++            DefaultTransferClass parInfo;
++            parInfo.iValues.push_back(vector<int>());
++            parInfo.iValues[0].push_back(iwalk);
++            parInfo.iValues[0].push_back(nPars);
++
++            for (size_t i=0; i<3; i++) {
++                parInfo.dValues.push_back(vector<Real>());
++            }
++
++            parInfo.dValues[0].push_back(walkerStatisticValue[iwalk]);
++            parInfo.dValues[0].push_back(randNumber[irand++]);
++            parInfo.dValues[0].push_back(randNumber[irand++]);
++            parInfo.dValues[0].push_back(A);
++
++            for (size_t i=0; i<nPars; i++) {
++                parInfo.dValues[1].push_back(walkerParamValues[iwalk][i]);
++                parInfo.dValues[2].push_back(walkerParamValues[jwalk][i]);
++            }
++
++            parallelInput.push_back(parInfo);
++            //az+//
+               
+           } // end loop over walkers in this set
+             
+           ProcessManager<DefaultTransferClass,DefaultTransferClass>::ParallelResults results;
+-          procs.run(parallelInput, results);  
++          procs.run(parallelInput, results);
++          /*az-
+           ProcessManager<DefaultTransferClass,DefaultTransferClass>::ParallelResults::const_iterator itResults = results.begin();
+           size_t iResults=0;
+           while (itResults != results.end())
+@@ -609,6 +651,26 @@
+              ++iResults;
+              ++itResults;
+           }  // end results struct loop
++         */
++         //az+
++          for (size_t iwalk=0; iwalk<m_walkers/2; iwalk++) {
++              int igood = results[iwalk].iValues[0][0];
++              size_t jwalk = iwalk + iset*m_walkers/2;
++              ntrial++;
++              if (igood == 1){
++                naccept++;
++                walkerStatisticValue[jwalk] =
++                        results[iwalk].dValues[0][0];
++                for (size_t i=0; i<nPars; i++) {
++                  walkerParamValues[jwalk][i] =
++                        results[iwalk].dValues[1][i];
++                }
++                if(bestStat>walkerStatisticValue[iwalk]) {
++                    bestStat = walkerStatisticValue[jwalk];
++                }
++              }
++            }
++          //az+//
+            
+ 	}  // end loop over two sets
+ 
+@@ -621,6 +683,18 @@
+ 	    m_IO->writePoint(walkerParamValues[iwalk], walkerStatisticValue[iwalk]);
+ 	  }
+ 	}
++    
++    //az+
++    // print progress
++    if (istep%10 == 0) {
++        Real rate = 1.*naccept/ntrial;
++        tcout << setw(10) << 100*istep/totalLength << "%  "
++            << bestStat << setw(12) << rate << setw(8) << A << endl;
++        naccept = 0;
++        ntrial = 0;
++        bestStat = 1e10;
++    }
++    //az+//
+ 
+ 	// end the main loop over chain steps.
+ 
+@@ -671,11 +745,67 @@
+   fit->isStillValid(wasFitStillValid);
+ }
+ 
++
++//az+
++void Chain::ParallelGW::execute(const bool isParallel, const DefaultTransferClass& input,
++              DefaultTransferClass& output)
++{
++  const int iwalk = input.iValues[0][0];
++  const int nPars = input.iValues[0][1];
++  std::valarray<Real> extraD(input.dValues[0].data(), input.dValues[0].size());
++  std::valarray<Real> currentParamValues(input.dValues[1].data(), input.dValues[1].size());
++  std::valarray<Real> complementaryParamValues(input.dValues[2].data(), input.dValues[2].size());
++  Real currentStatisticValue = input.dValues[0][0];
++  Real randR = input.dValues[0][1];
++  Real randR2 = input.dValues[0][2];
++  Real A = input.dValues[0][3];
++
++  output.iValues.clear();
++  output.dValues.clear();
++
++  // draw a random number, Z, from the distribution 1/sqrt(z) for z between 1/A and A.
++  Real Z = (A-1.0)*randR + 1;
++  Z = Z*Z / A;
++
++  RealArray newParamValues(nPars);
++  newParamValues = (1-Z)*complementaryParamValues + Z*currentParamValues;
++  bool good = fit->goodVariableParameterValues(newParamValues,'v');
++  int igood(0);
++
++  if ( good ) {
++    fit->setVariableParameterValues(newParamValues,'v');
++    fit->statManager()->performStats();
++    Real newStatisticValue = fit->statistic();
++
++    // calculate the acceptance criterion - note the -0.5 factor because the statistic
++    // is -2 log likelihood.
++
++    Real lndiff = (nPars-1)*log(Z) - 0.5*(newStatisticValue - currentStatisticValue);
++
++    // if required update this walker
++
++    if ( log(randR2) < lndiff ) {
++      igood = 1;
++      currentParamValues = newParamValues;
++      currentStatisticValue = newStatisticValue;
++    }
++  }
++  output.iValues.push_back(std::vector<int>(1,igood));
++
++  output.dValues.push_back(std::vector<Real>(1, currentStatisticValue));
++  output.dValues.push_back(std::vector<Real>());
++  for (int i=0; i<nPars; i++){
++    output.dValues[1].push_back(currentParamValues[i]);
++  }
++}
++//az+//
++
++
+ void Chain::initializeWalkers(const RealArray& originalParamValues,
+ 			      std::vector<RealArray>& walkerParamValues,
+ 			      std::vector<Real>& walkerStatisticValue)
+ {
+-
++  /*az-
+   try {
+     // initialize the parameter randomization
+     fit->randomizeForChain(true, true);
+@@ -686,24 +816,119 @@
+     msg += "so try something like chain proposal gaussian deltas 100.\n";
+     throw YellowAlert(msg);
+   }
++  */
++  //az+
++  bool useCovar = fit->isStillValid();
++  if ( useCovar ) {
++      try {
++          // initialize the parameter randomization
++          fit->randomizeForChain(true);
++      } catch(...) {
++          useCovar = false;
++      }
++  }
+ 
++  if ( useCovar ) {
++      tcout << "\n** Initializing: Using the 0.5* Covariance **"
++            << std::endl;
++  } else {
++      tcout << "\n** Initializing: Using 20% the values as sigma **"
++            << std::endl;
++  }
++
++  // if we are not using the covariance matrix then we will need the parameter deltas
++  RealArray paramDeltas = fit->variableParameterValues('d');
++  RealArray paramMax = fit->variableParameterValues('t');
++  RealArray paramMin = fit->variableParameterValues('b');
++  std::vector<DefaultTransferClass> parallelInput;
++  size_t nPars = originalParamValues.size();
++  //az+//
++  
+   // loop round walkers
+   for (size_t i=0; i<m_walkers; i++) {
+ 
++    /*az-
+     // for this walker set variable parameters to original values
+     fit->setVariableParameterValues(originalParamValues);
+     // randomize parameters using the proposal distribution set then store the result
+     fit->randomizeForChain();
+     walkerParamValues[i] = fit->variableParameterValues();
++    */
++    //az+
++    //if (i==0) {
++    //    walkerParamValues[0] = originalParamValues;
++    if ( useCovar ) {
++        // for this walker set variable parameters to original values
++        fit->setVariableParameterValues(originalParamValues);
++        fit->randomizeModelParameters(false, 0.5);
++        walkerParamValues[i] = fit->variableParameterValues();
++    } else {
++        RealArray randNumber(originalParamValues.size());
++        Numerics::GaussRand(randNumber);
++        walkerParamValues[i] = originalParamValues * (1 + 0.2*randNumber);
++    }
++    //az+//
+ 
++    /*az-
+     // calculate the fit statistic for these parameters and store
+     fit->statManager()->performStats();
+     walkerStatisticValue[i] = fit->statistic();
+     // if required save the results to the output file
+     if (!m_burnLength) m_IO->writePoint();
++    */
++    //az+
++    for (size_t j=0; j<nPars; j++){
++        if (walkerParamValues[i][j]<paramMin[j])
++                walkerParamValues[i][j] = paramMin[j];
++        if (walkerParamValues[i][j]>paramMax[j])
++                walkerParamValues[i][j] = paramMax[j];
++    }
++    DefaultTransferClass parInfo;
++    parInfo.dValues.push_back(std::vector<Real>());
++    for(size_t j=0; j<nPars; j++) {
++        parInfo.dValues[0].push_back(walkerParamValues[i][j]);
++    }
++    parallelInput.push_back(parInfo);
++    //az+//
+   }
+ 
++  //az+
++  size_t nGWProcs = m_walkers;
++  ProcessManager<DefaultTransferClass,DefaultTransferClass> procs(new ParallelGWInit(), "walkers");
++  try
++  {
++    procs.createProcesses(nGWProcs);
++    ProcessManager<DefaultTransferClass,DefaultTransferClass>::ParallelResults results;
++    procs.run(parallelInput, results);
++
++    for (size_t i=0; i<m_walkers; i++) {
++      walkerStatisticValue[i] = results[i].dValues[0][0];
++      if (!m_burnLength) m_IO->writePoint(walkerParamValues[i], walkerStatisticValue[i]);
++    }
++  }
++  catch(YellowAlert&)
++  {
++    procs.killProcesses();
++    tcerr << "Failed to initialize walkers" << std::endl;
++    throw ChainInterrupt();
++  }
++  procs.killProcesses();
++  tcout << "\n** Done initializaing **" << std::endl;
++  //az+//
++
++}
++
++//az+
++void Chain::ParallelGWInit::execute(const bool isParallel,
++            const DefaultTransferClass& input, DefaultTransferClass& output)
++{
++  std::valarray<Real> currentParamValues(input.dValues[0].data(), input.dValues[0].size());
++  fit->setVariableParameterValues(currentParamValues);
++  fit->statManager()->performStats();
++  output.dValues.clear();
++  output.dValues.push_back(std::vector<Real>(1, fit->statistic()));
+ }
++//az+//
+ 
+ void Chain::cleanupRun (const RealArray& origPars)
+ {

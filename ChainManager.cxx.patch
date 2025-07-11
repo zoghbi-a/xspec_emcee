@@ -1,0 +1,26 @@
+--- ChainManager.cxx
++++ ChainManager.cxx
+@@ -844,7 +844,10 @@
+       tcout <<"   Loaded chains have varying lengths.\n"<< std::endl;
+ }
+ 
+-void ChainManager::appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const string& format)
++//az- void ChainManager::appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const string& format)
++//az+
++void ChainManager::appendToChain (const string& chainName, const size_t addLength, const size_t walkers, const Real temperature, const string& format)
++//az+/
+ {
+    ChainContainer::iterator itChain = m_chains.find(chainName);
+    if (itChain == m_chains.end())
+@@ -869,7 +872,10 @@
+    try
+    {
+      chain->walkers(walkers);
+-     chain->runGW(addLength);
++     //az- chain->runGW(addLength);
++     //az+
++     chain->runGW(addLength, temperature);
++     //az+/
+    }
+    catch (YellowAlert&)
+    {

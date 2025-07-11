@@ -1,0 +1,12 @@
+--- xsChain.cxx
++++ xsChain.cxx
+@@ -541,7 +541,8 @@
+ 	      if ( chainType == "mh" ) {
+ 		chainManager->appendToChain(fileName, length, temperature, fileType);
+ 	      } else if ( chainType == "gw" ) {
+-		chainManager->appendToChain(fileName, length, walkers, fileType);
++		//az- chainManager->appendToChain(fileName, length, walkers, fileType);
++        chainManager->appendToChain(fileName, length, walkers, temperature, fileType);
+ 	      }
+ 	    } catch (...) {
+ 	      sigContainer->registerHandler(SIGINT,oldHandler);
