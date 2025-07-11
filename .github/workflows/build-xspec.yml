@@ -1,0 +1,77 @@
+name: Build Conda Package
+
+on:
+  workflow_dispatch:
+    inputs:
+        heasoft_conda_branch:
+          description: 'Branch of heasoft-conda to use'
+          required: false
+          default: 'main'
+          type: string
+
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true 
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-64
+          - os: macos-latest
+            platform: osx-arm64
+          - os: macos-latest
+            platform: osx-64
+
+    steps:
+
+      - name: Checkout repository
+        if: steps.check_skip.outputs.do_build == 'true'
+        uses: actions/checkout@v4
+
+      - name: prepare mamba
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: hconda
+          create-args: >-
+            python=3.12
+            rattler-build
+      
+      - name: get heasoft-conda
+        run: |
+          git clone https://github.com/heasarc/heasoft-conda.git
+          cd heasoft-conda
+          git checkout ${{ inputs.heasoft_conda_branch }}
+          cd xspec
+          for file in `find ../.. -maxdepth 1  -name '*.patch'`; do
+            fname=$(echo $file | sed 's|\.patch$||' | sed 's|../../||')
+            path=$(get_path $fname)
+            # set the correct path
+            echo "--- $path/$fname" > $fname.patch
+            echo "+++ $path/$fname" >> $fname.patch
+            tail -n +3 $file >> $fname.patch
+          done
+          cd ..
+
+      - name: build packages
+        run: |
+          cd heasoft-conda
+          package=xspec
+          echo "Building package $package"
+          if ! test -d $package; then
+            echo "package $package does not exist"
+            exit 1
+          fi 
+          cd $package
+          rattler-build build --no-include-recipe --target-platform ${{ matrix.platform }} --output-dir ../output
+          cd ..
+          rm -rf output/src_cache output/bld
+        shell: micromamba-shell {0}
+
+
+      - name: Upload conda package
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-package-${{ inputs.package }}-${{ matrix.platform }}
+          path: output/
