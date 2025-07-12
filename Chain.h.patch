@@ -1,5 +1,16 @@
---- Chain.h
-+++ Chain.h
+--- 6.35/Chain.h
++++ 6.35/Chain.h
+@@ -11,9 +11,9 @@
+ class ChainIO;
+ #include <xsTypes.h>
+ 
++#include <XSUtil/Utils/ProcessManager.h>
+ 
+ 
+-
+ class Chain 
+ {
+ 
 @@ -74,7 +74,10 @@
        const string& getFileName () const;
        void run (const size_t appendLength, const Real temperature);

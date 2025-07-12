@@ -1,6 +1,14 @@
 --- Chain.cxx
 +++ Chain.cxx
-@@ -112,7 +112,10 @@
+@@ -10,7 +10,6 @@
+ #include <XSModel/Parameter/ResponseParam.h>
+ #include <XSUtil/Numerics/RandomGenerator.h>
+ #include <XSUtil/Signals/SignalHandler.h>
+-#include <XSUtil/Utils/ProcessManager.h>
+ #include <XSUtil/Parse/XSparse.h>
+ #include <cmath>
+ #include <sstream>
+@@ -112,7 +111,10 @@
    if ( m_chainType == "MetropolisHastings" ) {
      runMH(appendLength, temperature);
    } else if ( m_chainType == "GoodmanWeare" ) {
@@ -12,7 +20,7 @@
    } else {
      string msg("Chain type is neither Metropolis-Hastings or Goodman-Weare");
      throw ChainError(msg);
-@@ -365,7 +368,10 @@
+@@ -365,7 +367,10 @@
    fit->isStillValid(wasFitStillValid);
  }
  
@@ -24,7 +32,7 @@
  {
    using namespace std;
    
-@@ -487,7 +493,10 @@
+@@ -487,7 +492,10 @@
    // and it won't allow ctrl-C breaking from the loop.      
    const SIGINT_Handler *intHandler = dynamic_cast<const SIGINT_Handler*>
                  (SignalHandler::instance()->getHandler(SIGINT));
@@ -36,7 +44,7 @@
    
    try
    {
-@@ -504,6 +513,14 @@
+@@ -504,6 +512,14 @@
       // Set of walkers will be split in two for parallelization.
       const size_t nParallel = m_walkers/2;
       procs.createProcesses((int)nParallel);
@@ -51,7 +59,7 @@
       
       // start the main loop over the chain steps
  
-@@ -516,16 +533,16 @@
+@@ -516,16 +532,16 @@
  
  	for (size_t iset=0; iset<2; iset++) {
  	  // loop over the walkers in this set
@@ -71,7 +79,7 @@
  
  	      // draw a random walker from one of the complementary set
  
-@@ -533,6 +550,7 @@
+@@ -533,6 +549,7 @@
  	      jwalk = (size_t)(randNumber[irand++]*(m_walkers/2));
  	      if ( iset == 0 ) jwalk += m_walkers/2;
  
@@ -79,7 +87,7 @@
  	      RealArray& complementaryParamValues = walkerParamValues[jwalk];
  
  	      // Use A as 2.0 as recommended by Goodman & Weare although we may want to 
-@@ -571,11 +589,35 @@
+@@ -571,11 +588,35 @@
                      valVector[iVal] = newParamValues[iVal];
                   iNewWalk.push_back(iwalk);
                }
@@ -116,7 +124,7 @@
            ProcessManager<DefaultTransferClass,DefaultTransferClass>::ParallelResults::const_iterator itResults = results.begin();
            size_t iResults=0;
            while (itResults != results.end())
-@@ -609,6 +651,26 @@
+@@ -609,6 +650,26 @@
               ++iResults;
               ++itResults;
            }  // end results struct loop
@@ -143,7 +151,7 @@
             
  	}  // end loop over two sets
  
-@@ -621,6 +683,18 @@
+@@ -621,6 +682,18 @@
  	    m_IO->writePoint(walkerParamValues[iwalk], walkerStatisticValue[iwalk]);
  	  }
  	}
@@ -162,10 +170,12 @@
  
  	// end the main loop over chain steps.
  
-@@ -671,11 +745,67 @@
+@@ -669,13 +742,69 @@
+   }
+   cleanupRun(originalParamValues);
    fit->isStillValid(wasFitStillValid);
- }
- 
++}
++
 +
 +//az+
 +void Chain::ParallelGW::execute(const bool isParallel, const DefaultTransferClass& input,
@@ -218,9 +228,9 @@
 +  for (int i=0; i<nPars; i++){
 +    output.dValues[1].push_back(currentParamValues[i]);
 +  }
-+}
+ }
 +//az+//
-+
+ 
 +
  void Chain::initializeWalkers(const RealArray& originalParamValues,
  			      std::vector<RealArray>& walkerParamValues,
@@ -231,7 +241,7 @@
    try {
      // initialize the parameter randomization
      fit->randomizeForChain(true, true);
-@@ -686,24 +816,119 @@
+@@ -686,24 +815,119 @@
      msg += "so try something like chain proposal gaussian deltas 100.\n";
      throw YellowAlert(msg);
    }
