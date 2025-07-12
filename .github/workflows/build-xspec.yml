@@ -1,6 +1,8 @@
 name: Build Conda Package
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
         heasoft_conda_branch:
@@ -90,3 +92,11 @@ jobs:
         with:
           name: conda-package-xspec-${{ matrix.platform }}
           path: heasoft-conda/output/
+
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: heasoft-conda/output/**/*.conda
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
